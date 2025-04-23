@@ -1,3 +1,4 @@
+-- Disconnect.wtf UI Clone by ChatGPT
 local DisconnectUI = {}
 DisconnectUI.__index = DisconnectUI
 
@@ -5,84 +6,148 @@ DisconnectUI.__index = DisconnectUI
 local colors = {
     background = Color3.fromRGB(10, 10, 10),
     border = Color3.fromRGB(30, 30, 30),
-    accent = Color3.fromRGB(162, 89, 255), -- purple
+    accent = Color3.fromRGB(162, 89, 255),
     text = Color3.fromRGB(255, 255, 255),
-    subtitle = Color3.fromRGB(180, 180, 180),
+    subtitle = Color3.fromRGB(160, 160, 160),
     toggleOn = Color3.fromRGB(162, 89, 255),
-    toggleOff = Color3.fromRGB(40, 40, 40),
+    toggleOff = Color3.fromRGB(35, 35, 35),
     sliderTrack = Color3.fromRGB(60, 60, 60),
+    sliderDot = Color3.fromRGB(162, 89, 255),
+    white = Color3.fromRGB(255, 255, 255)
 }
 
--- Utility
-local function createText(text, position, size, color)
+-- Drawing utilities
+local function createText(text, pos, size, col, centered)
     local t = Drawing.new("Text")
     t.Text = text
-    t.Position = position
-    t.Size = size or 13
-    t.Color = color or colors.text
+    t.Position = pos
+    t.Size = size or 14
+    t.Color = col or colors.text
     t.Outline = true
+    t.Center = centered or false
     t.Visible = true
     return t
 end
 
-local function createBox(position, size, color)
+local function createBox(pos, size, col, filled)
     local b = Drawing.new("Square")
-    b.Position = position
+    b.Position = pos
     b.Size = size
-    b.Filled = true
-    b.Color = color
+    b.Color = col or colors.border
+    b.Filled = filled or true
     b.Visible = true
     return b
 end
 
--- Create new UI
-function DisconnectUI.new(title, position, size)
-    local self = setmetatable({}, DisconnectUI)
-    self.drawings = {}
-
-    self.window = createBox(position, size, colors.background)
-    table.insert(self.drawings, self.window)
-
-    self.border = createBox(position - Vector2.new(1, 1), size + Vector2.new(2, 2), colors.border)
-    self.border.Filled = false
-    self.border.Thickness = 1.5
-    table.insert(self.drawings, self.border)
-
-    self.title = createText(title, position + Vector2.new(5, 5), 15, colors.accent)
-    table.insert(self.drawings, self.title)
-
-    self.componentsY = 25
-    self.position = position
-    self.size = size
-
-    return self
+local function createLine(from, to, col, thick)
+    local l = Drawing.new("Line")
+    l.From = from
+    l.To = to
+    l.Color = col or colors.border
+    l.Thickness = thick or 1
+    l.Visible = true
+    return l
 end
 
-function DisconnectUI:AddToggle(text, default)
-    local y = self.componentsY
-    local box = createBox(self.position + Vector2.new(10, y), Vector2.new(12, 12), default and colors.toggleOn or colors.toggleOff)
-    local label = createText(text, self.position + Vector2.new(30, y - 2))
+-- Main panel
+local function drawMainPanel()
+    local drawings = {}
 
-    self.componentsY = self.componentsY + 20
-    table.insert(self.drawings, box)
-    table.insert(self.drawings, label)
+    local origin = Vector2.new(300, 200)
+    local panelSize = Vector2.new(500, 340)
+
+    -- Main Background
+    table.insert(drawings, createBox(origin, panelSize, colors.background))
+
+    -- Border
+    local border = Drawing.new("Square")
+    border.Position = origin - Vector2.new(1, 1)
+    border.Size = panelSize + Vector2.new(2, 2)
+    border.Color = colors.border
+    border.Filled = false
+    border.Thickness = 1
+    border.Visible = true
+    table.insert(drawings, border)
+
+    -- Title Bar
+    table.insert(drawings, createText("disconnect.wtf", origin + Vector2.new(10, -20), 14, colors.accent))
+    
+    local tabs = { "Aimbot", "Visuals", "Misc", "World", "Settings" }
+    for i, tab in ipairs(tabs) do
+        local x = origin.X + 100 + ((i - 1) * 60)
+        local text = createText(tab, Vector2.new(x, origin.Y - 20), 14, i == 1 and colors.accent or colors.subtitle)
+        table.insert(drawings, text)
+        if i == 1 then
+            table.insert(drawings, createLine(Vector2.new(x, origin.Y - 5), Vector2.new(x + 45, origin.Y - 5), colors.accent, 2))
+        end
+    end
+
+    -- Left Section (Aimbot)
+    table.insert(drawings, createText("Aimbot", origin + Vector2.new(10, 10), 14, colors.accent))
+    table.insert(drawings, createBox(origin + Vector2.new(10, 30), Vector2.new(12, 12), colors.toggleOn))
+    table.insert(drawings, createText("Aimbot", origin + Vector2.new(30, 30), 14))
+    table.insert(drawings, createBox(origin + Vector2.new(190, 30), Vector2.new(50, 16), colors.border, false))
+    table.insert(drawings, createText("Mouse 1", origin + Vector2.new(195, 30), 13, colors.white))
+
+    local y = 55
+    local function toggle(label, checked)
+        table.insert(drawings, createBox(origin + Vector2.new(10, y), Vector2.new(12, 12), checked and colors.toggleOn or colors.toggleOff))
+        table.insert(drawings, createText(label, origin + Vector2.new(30, y), 14, checked and colors.text or colors.subtitle))
+        y = y + 22
+    end
+
+    toggle("Silent Aim", true)
+    toggle("Smoothing", true)
+
+    -- Smoothness slider
+    table.insert(drawings, createText("Smoothness", origin + Vector2.new(30, y), 13))
+    table.insert(drawings, createText("15.974", origin + Vector2.new(200, y), 13))
+    table.insert(drawings, createBox(origin + Vector2.new(30, y + 17), Vector2.new(190, 4), colors.sliderTrack))
+    table.insert(drawings, createBox(origin + Vector2.new(30 + 190 * 0.15974, y + 15), Vector2.new(6, 8), colors.sliderDot))
+    y = y + 35
+
+    toggle("Target Team", false)
+    toggle("Hitchance", false)
+    toggle("Draw FOV", true)
+    table.insert(drawings, createText("Aim FOV", origin + Vector2.new(30, y), 13))
+    table.insert(drawings, createText("70.000", origin + Vector2.new(200, y), 13))
+    table.insert(drawings, createBox(origin + Vector2.new(30, y + 17), Vector2.new(190, 4), colors.sliderTrack))
+    table.insert(drawings, createBox(origin + Vector2.new(30 + 190 * 0.7, y + 15), Vector2.new(6, 8), colors.sliderDot))
+    y = y + 35
+
+    toggle("Target Line", true)
+    toggle("Fire Speed", false)
+    toggle("Fast Bullet", false)
+
+    -- Right Section (Weapon)
+    table.insert(drawings, createText("Weapon", origin + Vector2.new(270, 10), 14, colors.accent))
+    y = 30
+    local function rightToggle(label, checked)
+        table.insert(drawings, createBox(origin + Vector2.new(270, y), Vector2.new(12, 12), checked and colors.toggleOn or colors.toggleOff))
+        table.insert(drawings, createText(label, origin + Vector2.new(290, y), 14, checked and colors.text or colors.subtitle))
+        y = y + 22
+    end
+
+    rightToggle("Always Automatic", true)
+    rightToggle("Instant Eoka", false)
+    rightToggle("Instant Bow", false)
+    rightToggle("Shotgun Nospread", false)
+    rightToggle("Thick Bullet", false)
+
+    -- Weapon Sliders
+    table.insert(drawings, createText("Weapon Sliders", origin + Vector2.new(270, 150), 14, colors.accent))
+    local function slider(label, val, ypos)
+        table.insert(drawings, createText(label, origin + Vector2.new(270, ypos), 13))
+        table.insert(drawings, createText(tostring(val), origin + Vector2.new(460, ypos), 13))
+        table.insert(drawings, createBox(origin + Vector2.new(270, ypos + 15), Vector2.new(190, 4), colors.sliderTrack))
+        table.insert(drawings, createBox(origin + Vector2.new(270 + val / 100 * 190, ypos + 13), Vector2.new(6, 8), colors.sliderDot))
+    end
+    slider("Recoil X", 0, 170)
+    slider("Recoil Y", 0, 210)
+    slider("Spread", 0, 250)
+
+    return drawings
 end
 
-function DisconnectUI:AddSlider(text, value)
-    local y = self.componentsY
-    local label = createText(text .. ": " .. tostring(value), self.position + Vector2.new(10, y))
-    local track = createBox(self.position + Vector2.new(10, y + 15), Vector2.new(self.size.X - 20, 3), colors.sliderTrack)
-    local knob = createBox(track.Position + Vector2.new(value / 100 * track.Size.X, -3), Vector2.new(6, 9), colors.accent)
-
-    table.insert(self.drawings, label)
-    table.insert(self.drawings, track)
-    table.insert(self.drawings, knob)
-
-    self.componentsY = self.componentsY + 35
-end
-
-function DisconnectUI:Destroy()
-    for _, d in ipairs(self.drawings) do d:Remove() end
-end
-
-return DisconnectUI
+-- Run UI
+local ui = drawMainPanel()

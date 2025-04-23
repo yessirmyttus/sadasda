@@ -1,0 +1,88 @@
+local DisconnectUI = {}
+DisconnectUI.__index = DisconnectUI
+
+-- Colors
+local colors = {
+    background = Color3.fromRGB(10, 10, 10),
+    border = Color3.fromRGB(30, 30, 30),
+    accent = Color3.fromRGB(162, 89, 255), -- purple
+    text = Color3.fromRGB(255, 255, 255),
+    subtitle = Color3.fromRGB(180, 180, 180),
+    toggleOn = Color3.fromRGB(162, 89, 255),
+    toggleOff = Color3.fromRGB(40, 40, 40),
+    sliderTrack = Color3.fromRGB(60, 60, 60),
+}
+
+-- Utility
+local function createText(text, position, size, color)
+    local t = Drawing.new("Text")
+    t.Text = text
+    t.Position = position
+    t.Size = size or 13
+    t.Color = color or colors.text
+    t.Outline = true
+    t.Visible = true
+    return t
+end
+
+local function createBox(position, size, color)
+    local b = Drawing.new("Square")
+    b.Position = position
+    b.Size = size
+    b.Filled = true
+    b.Color = color
+    b.Visible = true
+    return b
+end
+
+-- Create new UI
+function DisconnectUI.new(title, position, size)
+    local self = setmetatable({}, DisconnectUI)
+    self.drawings = {}
+
+    self.window = createBox(position, size, colors.background)
+    table.insert(self.drawings, self.window)
+
+    self.border = createBox(position - Vector2.new(1, 1), size + Vector2.new(2, 2), colors.border)
+    self.border.Filled = false
+    self.border.Thickness = 1.5
+    table.insert(self.drawings, self.border)
+
+    self.title = createText(title, position + Vector2.new(5, 5), 15, colors.accent)
+    table.insert(self.drawings, self.title)
+
+    self.componentsY = 25
+    self.position = position
+    self.size = size
+
+    return self
+end
+
+function DisconnectUI:AddToggle(text, default)
+    local y = self.componentsY
+    local box = createBox(self.position + Vector2.new(10, y), Vector2.new(12, 12), default and colors.toggleOn or colors.toggleOff)
+    local label = createText(text, self.position + Vector2.new(30, y - 2))
+
+    self.componentsY = self.componentsY + 20
+    table.insert(self.drawings, box)
+    table.insert(self.drawings, label)
+end
+
+function DisconnectUI:AddSlider(text, value)
+    local y = self.componentsY
+    local label = createText(text .. ": " .. tostring(value), self.position + Vector2.new(10, y))
+    local track = createBox(self.position + Vector2.new(10, y + 15), Vector2.new(self.size.X - 20, 3), colors.sliderTrack)
+    local knob = createBox(track.Position + Vector2.new(value / 100 * track.Size.X, -3), Vector2.new(6, 9), colors.accent)
+
+    table.insert(self.drawings, label)
+    table.insert(self.drawings, track)
+    table.insert(self.drawings, knob)
+
+    self.componentsY = self.componentsY + 35
+end
+
+function DisconnectUI:Destroy()
+    for _, d in ipairs(self.drawings) do d:Remove() end
+end
+
+return DisconnectUI
